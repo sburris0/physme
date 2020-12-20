@@ -148,32 +148,32 @@ impl Obb {
     pub fn min(&self) -> Vec2 {
         let min_x = self
             .v0()
-            .x()
-            .min(self.v1().x())
-            .min(self.v2().x())
-            .min(self.v3().x());
+            .x
+            .min(self.v1().x)
+            .min(self.v2().x)
+            .min(self.v3().x);
         let min_y = self
             .v0()
-            .y()
-            .min(self.v1().y())
-            .min(self.v2().y())
-            .min(self.v3().y());
+            .y
+            .min(self.v1().y)
+            .min(self.v2().y)
+            .min(self.v3().y);
         Vec2::new(min_x, min_y)
     }
 
     pub fn max(&self) -> Vec2 {
         let max_x = self
             .v0()
-            .x()
-            .max(self.v1().x())
-            .max(self.v2().x())
-            .max(self.v3().x());
+            .x
+            .max(self.v1().x)
+            .max(self.v2().x)
+            .max(self.v3().x);
         let max_y = self
             .v0()
-            .y()
-            .max(self.v1().y())
-            .max(self.v2().y())
-            .max(self.v3().y());
+            .y
+            .max(self.v1().y)
+            .max(self.v2().y)
+            .max(self.v3().y);
         Vec2::new(max_x, max_y)
     }
 
@@ -208,7 +208,7 @@ impl Collider for Obb {
 }
 
 /// The two dimensional size of a `Shape`
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Property)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Reflect)]
 pub struct Size2 {
     pub width: f32,
     pub height: f32,
@@ -224,7 +224,7 @@ impl Size2 {
 /// The shape of a rigid body.
 ///
 /// Contains a rotation/translation offset and a size.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Properties)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Reflect)]
 pub struct Shape {
     offset: Vec2,
     size: Size2,
@@ -540,7 +540,7 @@ impl<B: JointBehaviour> Joint<B> {
 }
 
 /// The rigid body.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Properties)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Reflect)]
 pub struct RigidBody {
     /// Current position of this rigid body.
     pub position: Vec2,
@@ -779,14 +779,6 @@ pub struct NarrowPhase {
     set: HashSet<[Entity; 2]>,
 }
 
-impl NarrowPhase {
-    pub fn system(self, res: &mut Resources) -> Box<dyn System> {
-        let system = narrow_phase_system.system();
-        res.insert_local(system.id(), self);
-        system
-    }
-}
-
 fn bias_greater_than(a: f32, b: f32) -> bool {
     const BIAS_RELATIVE: f32 = 0.95;
     const BIAS_ABSOLUTE: f32 = 0.01;
@@ -931,7 +923,7 @@ fn narrow_phase_system(
 
         let side_plane_normal = (v2 - v1).normalize();
 
-        let ref_face_normal = Vec2::new(side_plane_normal.y(), -side_plane_normal.x());
+        let ref_face_normal = Vec2::new(side_plane_normal.y, -side_plane_normal.x);
 
         let refc = ref_face_normal.dot(v1);
         let negside = -side_plane_normal.dot(v1);
@@ -986,14 +978,6 @@ pub struct Solver {
     reader: EventReader<Manifold>,
 }
 
-impl Solver {
-    pub fn system(self, res: &mut Resources) -> Box<dyn System> {
-        let system = solve_system.system();
-        res.insert_local(system.id(), self);
-        system
-    }
-}
-
 fn solve_system(
     mut solver: Local<Solver>,
     time: Res<Time>,
@@ -1003,7 +987,7 @@ fn solve_system(
     ang_tol: Res<AngularTolerance>,
     mut query: Query<Mut<RigidBody>>,
 ) {
-    let delta_time = time.delta.as_secs_f32();
+    let delta_time = time.delta().as_secs_f32();
 
     for manifold in solver.reader.iter(&manifolds) {
         let a = query.get_component::<RigidBody>(manifold.body1).unwrap();
@@ -1047,7 +1031,7 @@ fn solve_system(
                     if v.signum() == d.signum() {
                         // nothing
                     } else {
-                        a.linvel *= Vec2::new(manifold.normal.y().abs(), manifold.normal.x().abs());
+                        a.linvel *= Vec2::new(manifold.normal.y.abs(), manifold.normal.x.abs());
                         a.position += d;
                     }
                 } else {
@@ -1076,7 +1060,7 @@ fn solve_system(
                             // nothing
                         } else {
                             a.linvel *=
-                                Vec2::new(manifold.normal.y().abs(), manifold.normal.x().abs());
+                                Vec2::new(manifold.normal.y.abs(), manifold.normal.x.abs());
                             a.position += d;
                         }
                     }
@@ -1099,7 +1083,7 @@ fn solve_system(
                     if v.signum() == d.signum() {
                         // nothing
                     } else {
-                        b.linvel *= Vec2::new(manifold.normal.y().abs(), manifold.normal.x().abs());
+                        b.linvel *= Vec2::new(manifold.normal.y.abs(), manifold.normal.x.abs());
                         b.position += d;
                     }
                 } else {
@@ -1128,7 +1112,7 @@ fn solve_system(
                             // nothing
                         } else {
                             b.linvel *=
-                                Vec2::new(manifold.normal.y().abs(), manifold.normal.x().abs());
+                                Vec2::new(manifold.normal.y.abs(), manifold.normal.x.abs());
                             b.position += d;
                         }
                     }
@@ -1141,14 +1125,6 @@ fn solve_system(
 
 pub struct PhysicsStep {
     skip: usize,
-}
-
-impl PhysicsStep {
-    pub fn system(self, res: &mut Resources) -> Box<dyn System> {
-        let system = physics_step_system.system();
-        res.insert_local(system.id(), self);
-        system
-    }
 }
 
 impl Default for PhysicsStep {
@@ -1171,7 +1147,7 @@ fn physics_step_system(
         return;
     }
 
-    let delta_time = time.delta.as_secs_f32();
+    let delta_time = time.delta().as_secs_f32();
 
     for (mut body, children) in query.iter_mut() {
         if !body.active {
@@ -1191,17 +1167,17 @@ fn physics_step_system(
         if matches!(body.status, Status::Semikinematic) {
             let vel = body.linvel;
             let limit = body.terminal;
-            match vel.x().partial_cmp(&0.0) {
-                Some(Ordering::Less) => *body.linvel.x_mut() = vel.x().max(-limit.x()),
-                Some(Ordering::Greater) => *body.linvel.x_mut() = vel.x().min(limit.x()),
+            match vel.x.partial_cmp(&0.0) {
+                Some(Ordering::Less) => body.linvel.x = vel.x.max(-limit.x),
+                Some(Ordering::Greater) => body.linvel.x = vel.x.min(limit.x),
                 Some(Ordering::Equal) => {}
-                None => *body.linvel.x_mut() = 0.0,
+                None => body.linvel.x = 0.0,
             }
-            match vel.y().partial_cmp(&0.0) {
-                Some(Ordering::Less) => *body.linvel.y_mut() = vel.y().max(-limit.y()),
-                Some(Ordering::Greater) => *body.linvel.y_mut() = vel.y().min(limit.y()),
+            match vel.y.partial_cmp(&0.0) {
+                Some(Ordering::Less) => body.linvel.y = vel.y.max(-limit.y),
+                Some(Ordering::Greater) => body.linvel.y = vel.y.min(limit.y),
                 Some(Ordering::Equal) => {}
-                None => *body.linvel.y_mut() = 0.0,
+                None => body.linvel.y = 0.0,
             }
             let vel = body.angvel;
             let limit = body.ang_term;
@@ -1221,11 +1197,11 @@ fn physics_step_system(
 
         match body.status {
             Status::Semikinematic => {
-                if body.linvel.x().abs() <= body.prev_linvel.x().abs() {
-                    *body.linvel.x_mut() *= friction.0
+                if body.linvel.x.abs() <= body.prev_linvel.x.abs() {
+                    body.linvel.x *= friction.0
                 }
-                if body.linvel.y().abs() <= body.prev_linvel.y().abs() {
-                    *body.linvel.y_mut() *= friction.0
+                if body.linvel.y.abs() <= body.prev_linvel.y.abs() {
+                    body.linvel.y *= friction.0
                 }
                 if body.angvel.abs() <= body.prev_angvel.abs() {
                     body.angvel *= friction.0
@@ -1363,21 +1339,21 @@ pub fn sync_transform_system(
     for (body, mut transform) in query.iter_mut() {
         match *translation_mode {
             TranslationMode::AxesXY => {
-                let x = body.position.x();
-                let y = body.position.y();
+                let x = body.position.x;
+                let y = body.position.y;
                 let z = 0.0;
                 transform.translation = Vec3::new(x, y, z);
             }
             TranslationMode::AxesXZ => {
-                let x = body.position.x();
+                let x = body.position.x;
                 let y = 0.0;
-                let z = body.position.y();
+                let z = body.position.y;
                 transform.translation = Vec3::new(x, y, z);
             }
             TranslationMode::AxesYZ => {
                 let x = 0.0;
-                let y = body.position.x();
-                let z = body.position.y();
+                let y = body.position.x;
+                let z = body.position.y;
                 transform.translation = Vec3::new(x, y, z);
             }
         }

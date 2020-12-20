@@ -48,7 +48,7 @@ impl Plugin for Physics3dPlugin {
             .add_stage_after(stage::PHYSICS_SOLVE, stage::RIGID_JOINT)
             .add_stage_after(stage::RIGID_JOINT, stage::SYNC_TRANSFORM);
         let physics_step = PhysicsStep::default().system(app.resources_mut());
-        app.add_system_to_stage(stage::PHYSICS_STEP, physics_step)
+        app.add_system_to_stage(stage::PHYSICS_STEP, physics_step_system)
             .add_system_to_stage(stage::BROAD_PHASE, broad_phase_system.system())
             .add_system_to_stage(stage::NARROW_PHASE, narrow_phase_system.system());
         let solver = Solver::default().system(app.resources_mut());
@@ -108,7 +108,7 @@ impl Default for AngularTolerance {
 }
 
 /// The local up vector, affects a single semikinematic body.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Properties)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Reflect)]
 pub struct Up(pub Vec3);
 
 impl Default for Up {
@@ -118,7 +118,7 @@ impl Default for Up {
 }
 
 /// The rotation, relative to the up vector.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Properties)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Reflect)]
 pub struct UpRotation(pub f32);
 
 impl Default for UpRotation {
@@ -155,56 +155,56 @@ impl Obb {
     }
 
     pub fn v0(&self) -> Vec3 {
-        let v = Vec3::new(-self.extent.x(), -self.extent.y(), -self.extent.z());
+        let v = Vec3::new(-self.extent.x, -self.extent.y, -self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
     }
 
     pub fn v1(&self) -> Vec3 {
-        let v = Vec3::new(self.extent.x(), -self.extent.y(), -self.extent.z());
+        let v = Vec3::new(self.extent.x, -self.extent.y, -self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
     }
 
     pub fn v2(&self) -> Vec3 {
-        let v = Vec3::new(self.extent.x(), self.extent.y(), -self.extent.z());
+        let v = Vec3::new(self.extent.x, self.extent.y, -self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
     }
 
     pub fn v3(&self) -> Vec3 {
-        let v = Vec3::new(-self.extent.x(), self.extent.y(), -self.extent.z());
+        let v = Vec3::new(-self.extent.x, self.extent.y, -self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
     }
 
     pub fn v4(&self) -> Vec3 {
-        let v = Vec3::new(-self.extent.x(), -self.extent.y(), self.extent.z());
+        let v = Vec3::new(-self.extent.x, -self.extent.y, self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
     }
 
     pub fn v5(&self) -> Vec3 {
-        let v = Vec3::new(self.extent.x(), -self.extent.y(), self.extent.z());
+        let v = Vec3::new(self.extent.x, -self.extent.y, self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
     }
 
     pub fn v6(&self) -> Vec3 {
-        let v = Vec3::new(self.extent.x(), self.extent.y(), self.extent.z());
+        let v = Vec3::new(self.extent.x, self.extent.y, self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
     }
 
     pub fn v7(&self) -> Vec3 {
-        let v = Vec3::new(-self.extent.x(), self.extent.y(), self.extent.z());
+        let v = Vec3::new(-self.extent.x, self.extent.y, self.extent.z);
         self.transform
             .compute_matrix()
             .transform_point3(self.local.compute_matrix().transform_point3(v))
@@ -213,68 +213,68 @@ impl Obb {
     pub fn min(&self) -> Vec3 {
         let min_x = self
             .v0()
-            .x()
-            .min(self.v1().x())
-            .min(self.v2().x())
-            .min(self.v3().x())
-            .min(self.v4().x())
-            .min(self.v5().x())
-            .min(self.v6().x())
-            .min(self.v7().x());
+            .x
+            .min(self.v1().x)
+            .min(self.v2().x)
+            .min(self.v3().x)
+            .min(self.v4().x)
+            .min(self.v5().x)
+            .min(self.v6().x)
+            .min(self.v7().x);
         let min_y = self
             .v0()
-            .y()
-            .min(self.v1().y())
-            .min(self.v2().y())
-            .min(self.v3().y())
-            .min(self.v4().y())
-            .min(self.v5().y())
-            .min(self.v6().y())
-            .min(self.v7().y());
+            .y
+            .min(self.v1().y)
+            .min(self.v2().y)
+            .min(self.v3().y)
+            .min(self.v4().y)
+            .min(self.v5().y)
+            .min(self.v6().y)
+            .min(self.v7().y);
         let min_z = self
             .v0()
-            .z()
-            .min(self.v1().z())
-            .min(self.v2().z())
-            .min(self.v3().z())
-            .min(self.v4().z())
-            .min(self.v5().z())
-            .min(self.v6().z())
-            .min(self.v7().z());
+            .z
+            .min(self.v1().z)
+            .min(self.v2().z)
+            .min(self.v3().z)
+            .min(self.v4().z)
+            .min(self.v5().z)
+            .min(self.v6().z)
+            .min(self.v7().z);
         Vec3::new(min_x, min_y, min_z)
     }
 
     pub fn max(&self) -> Vec3 {
         let max_x = self
             .v0()
-            .x()
-            .max(self.v1().x())
-            .max(self.v2().x())
-            .max(self.v3().x())
-            .max(self.v4().x())
-            .max(self.v5().x())
-            .max(self.v6().x())
-            .max(self.v7().x());
+            .x
+            .max(self.v1().x)
+            .max(self.v2().x)
+            .max(self.v3().x)
+            .max(self.v4().x)
+            .max(self.v5().x)
+            .max(self.v6().x)
+            .max(self.v7().x);
         let max_y = self
             .v0()
-            .y()
-            .max(self.v1().y())
-            .max(self.v2().y())
-            .max(self.v3().y())
-            .max(self.v4().y())
-            .max(self.v5().y())
-            .max(self.v6().y())
-            .max(self.v7().y());
+            .y
+            .max(self.v1().y)
+            .max(self.v2().y)
+            .max(self.v3().y)
+            .max(self.v4().y)
+            .max(self.v5().y)
+            .max(self.v6().y)
+            .max(self.v7().y);
         let max_z = self
             .v0()
-            .z()
-            .max(self.v1().z())
-            .max(self.v2().z())
-            .max(self.v3().z())
-            .max(self.v4().z())
-            .max(self.v5().z())
-            .max(self.v6().z())
-            .max(self.v7().z());
+            .z
+            .max(self.v1().z)
+            .max(self.v2().z)
+            .max(self.v3().z)
+            .max(self.v4().z)
+            .max(self.v5().z)
+            .max(self.v6().z)
+            .max(self.v7().z);
         Vec3::new(max_x, max_y, max_z)
     }
 }
@@ -292,7 +292,7 @@ impl Collider for Obb {
 }
 
 /// The three dimensional size of a `Shape`
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Property)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Reflect)]
 pub struct Size3 {
     pub width: f32,
     pub height: f32,
@@ -313,7 +313,7 @@ impl Size3 {
 /// The shape of a rigid body.
 ///
 /// Contains a rotation/translation offset and a size.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Properties)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Reflect)]
 pub struct Shape {
     local: Mat4,
     size: Size3,
@@ -636,7 +636,7 @@ impl<B: JointBehaviour> Joint<B> {
 }
 
 /// The rigid body.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Properties)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Reflect)]
 pub struct RigidBody {
     /// Current position of this rigid body.
     pub position: Vec3,
@@ -878,14 +878,6 @@ pub struct NarrowPhase {
     set: HashSet<[Entity; 2]>,
 }
 
-impl NarrowPhase {
-    pub fn system(self, res: &mut Resources) -> Box<dyn System> {
-        let system = narrow_phase_system.system();
-        res.insert_local(system.id(), self);
-        system
-    }
-}
-
 fn narrow_phase_system(
     mut state: Local<NarrowPhase>,
     mut manifolds: ResMut<Events<Manifold>>,
@@ -914,14 +906,6 @@ pub struct Solver {
     reader: EventReader<Manifold>,
 }
 
-impl Solver {
-    pub fn system(self, res: &mut Resources) -> Box<dyn System> {
-        let system = solve_system.system();
-        res.insert_local(system.id(), self);
-        system
-    }
-}
-
 fn solve_system(
     mut solver: Local<Solver>,
     time: Res<Time>,
@@ -931,7 +915,7 @@ fn solve_system(
     ang_tol: Res<AngularTolerance>,
     mut query: Query<(Mut<RigidBody>, Option<Mut<Up>>)>,
 ) {
-    let delta_time = time.delta.as_secs_f32();
+    let delta_time = time.delta().as_secs_f32();
 
     for manifold in solver.reader.iter(&manifolds) {
         let a = query.get_component::<RigidBody>(manifold.body1).unwrap();
@@ -1083,14 +1067,6 @@ pub struct PhysicsStep {
     skip: usize,
 }
 
-impl PhysicsStep {
-    pub fn system(self, res: &mut Resources) -> Box<dyn System> {
-        let system = physics_step_system.system();
-        res.insert_local(system.id(), self);
-        system
-    }
-}
-
 impl Default for PhysicsStep {
     fn default() -> Self {
         PhysicsStep { skip: 3 }
@@ -1110,7 +1086,7 @@ fn physics_step_system(
         return;
     }
 
-    let delta_time = time.delta.as_secs_f32();
+    let delta_time = time.delta().as_secs_f32();
 
     for (mut body, local_up) in query.iter_mut() {
         if !body.active {
@@ -1130,28 +1106,28 @@ fn physics_step_system(
         if matches!(body.status, Status::Semikinematic) {
             let vel = body.linvel;
             let limit = body.terminal;
-            match vel.x().partial_cmp(&0.0) {
-                Some(Ordering::Less) => *body.linvel.x_mut() = vel.x().max(-limit.x()),
-                Some(Ordering::Greater) => *body.linvel.x_mut() = vel.x().min(limit.x()),
+            match vel.x.partial_cmp(&0.0) {
+                Some(Ordering::Less) => body.linvel.x = vel.x.max(-limit.x),
+                Some(Ordering::Greater) => body.linvel.x = vel.x.min(limit.x),
                 Some(Ordering::Equal) => {}
-                None => *body.linvel.x_mut() = 0.0,
+                None => body.linvel.x = 0.0,
             }
-            match vel.y().partial_cmp(&0.0) {
-                Some(Ordering::Less) => *body.linvel.y_mut() = vel.y().max(-limit.y()),
-                Some(Ordering::Greater) => *body.linvel.y_mut() = vel.y().min(limit.y()),
+            match vel.y.partial_cmp(&0.0) {
+                Some(Ordering::Less) => body.linvel.y = vel.y.max(-limit.y),
+                Some(Ordering::Greater) => body.linvel.y = vel.y.min(limit.y),
                 Some(Ordering::Equal) => {}
-                None => *body.linvel.y_mut() = 0.0,
+                None => body.linvel.y = 0.0,
             }
-            match vel.z().partial_cmp(&0.0) {
-                Some(Ordering::Less) => *body.linvel.z_mut() = vel.z().max(-limit.z()),
-                Some(Ordering::Greater) => *body.linvel.z_mut() = vel.z().min(limit.z()),
+            match vel.z.partial_cmp(&0.0) {
+                Some(Ordering::Less) => body.linvel.z = vel.z.max(-limit.z),
+                Some(Ordering::Greater) => body.linvel.z = vel.z.min(limit.z),
                 Some(Ordering::Equal) => {}
-                None => *body.linvel.z_mut() = 0.0,
+                None => body.linvel.z = 0.0,
             }
             let vel = body.angvel;
             let limit = body.ang_term;
             let (axis, mut angle) = vel.to_axis_angle();
-            match vel.w().partial_cmp(&0.0) {
+            match vel.w.partial_cmp(&0.0) {
                 Some(Ordering::Less) => {
                     angle = angle.max(-limit);
                     body.angvel = Quat::from_axis_angle(axis, angle);
@@ -1186,16 +1162,16 @@ fn physics_step_system(
 
         match body.status {
             Status::Semikinematic => {
-                if body.linvel.x().abs() <= body.prev_linvel.x().abs() {
-                    *body.linvel.x_mut() *= friction.0;
+                if body.linvel.x.abs() <= body.prev_linvel.x.abs() {
+                    body.linvel.x *= friction.0;
                 }
-                if body.linvel.y().abs() <= body.prev_linvel.y().abs() {
-                    *body.linvel.y_mut() *= friction.0;
+                if body.linvel.y.abs() <= body.prev_linvel.y.abs() {
+                    body.linvel.y *= friction.0;
                 }
-                if body.linvel.z().abs() <= body.prev_linvel.z().abs() {
-                    *body.linvel.z_mut() *= friction.0;
+                if body.linvel.z.abs() <= body.prev_linvel.z.abs() {
+                    body.linvel.z *= friction.0;
                 }
-                if body.angvel.w().abs() <= body.prev_angvel.w().abs() {
+                if body.angvel.w.abs() <= body.prev_angvel.w.abs() {
                     let (axis, mut angle) = body.angvel.to_axis_angle();
                     angle *= friction.0;
                     body.angvel = Quat::from_axis_angle(axis, angle);
